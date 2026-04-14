@@ -6,7 +6,7 @@ export default function Layout({ children }) {
     <div className="min-h-screen bg-slate-950 text-white">
       <Navbar />
       <Sidebar />
-      <main className="ml-56 pt-16 p-8 min-h-screen">
+      <main className="ml-64 pt-16 p-8 min-h-screen">
         {children}
       </main>
     </div>

@@ -1,5 +1,9 @@
 # Python
 backend/__pycache__/
+backend/repositories/__pycache__/
+backend/models/__pycache__/
+backend/controllers/__pycache__/
+backend/schemas/__pycache__/
 backend/core/__pycache__/
 backend/*.pyc
 backend/.env
@@ -15,5 +19,21 @@ frontend/.env
 .DS_Store
 Thumbs.db
 
+# Global Cache
 **/__pycache__/
 *.pyc
+
+# Local Environments & Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs & Databases
+*.log
+*.sqlite3
+*.db

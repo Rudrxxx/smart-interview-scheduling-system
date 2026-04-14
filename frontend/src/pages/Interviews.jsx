@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import api from '../api/axios'
-import { useAuth } from '../context/AuthContext'
+import { useDBUser } from '../components/ClerkAxiosProvider'
 
 export default function Interviews() {
-  const { user } = useAuth()
+  const { user } = useDBUser()
   const [interviews, setInterviews] = useState([])
   const [applications, setApplications] = useState([])
   const [interviewers, setInterviewers] = useState([])
@@ -51,77 +51,84 @@ export default function Interviews() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="max-w-6xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-medium text-white">
               {user?.role === 'admin' ? 'Manage Interviews' : 'My Interviews'}
             </h1>
             <p className="text-slate-400 text-sm mt-1">{interviews.length} scheduled</p>
           </div>
           {user?.role === 'admin' && (
             <button onClick={() => setShowForm(!showForm)}
-              className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              className="bg-white hover:bg-slate-100 text-slate-950 px-4 py-2 rounded-xl text-sm font-medium transition-all">
               + Schedule Interview
             </button>
           )}
         </div>
 
         {showForm && (
-          <form onSubmit={handleSchedule} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h2 className="text-white font-semibold">Schedule Interview</h2>
-            {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>}
-            <select value={form.application_id} onChange={e => setForm({ ...form, application_id: e.target.value })} required
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500">
-              <option value="">Select Application</option>
-              {applications.map(a => <option key={a.id} value={a.id}>App #{a.id} — Student #{a.student_id} (Drive #{a.drive_id})</option>)}
-            </select>
-            <select value={form.interviewer_id} onChange={e => setForm({ ...form, interviewer_id: e.target.value })} required
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500">
-              <option value="">Select Interviewer</option>
-              {interviewers.map(i => <option key={i.id} value={i.id}>{i.name} ({i.email})</option>)}
-            </select>
-            <input type="datetime-local" value={form.scheduled_date} onChange={e => setForm({ ...form, scheduled_date: e.target.value })} required
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500" />
-            <input value={form.time_slot} onChange={e => setForm({ ...form, time_slot: e.target.value })} required
-              placeholder="Time slot (e.g., 10:00 AM - 10:30 AM)"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500" />
+          <form onSubmit={handleSchedule} className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 max-w-2xl">
+            <h2 className="text-white font-medium mb-2">Schedule New Interview</h2>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <select value={form.application_id} onChange={e => setForm({ ...form, application_id: e.target.value })} required
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-slate-500 text-sm">
+                <option value="">Select Application</option>
+                {applications.map(a => <option key={a.id} value={a.id}>App #{a.id} — Student #{a.student_id}</option>)}
+              </select>
+              <select value={form.interviewer_id} onChange={e => setForm({ ...form, interviewer_id: e.target.value })} required
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-slate-500 text-sm">
+                <option value="">Select Interviewer</option>
+                {interviewers.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+              <input type="datetime-local" value={form.scheduled_date} onChange={e => setForm({ ...form, scheduled_date: e.target.value })} required
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-slate-500 text-sm" />
+              <input value={form.time_slot} onChange={e => setForm({ ...form, time_slot: e.target.value })} required
+                placeholder="Time slot (e.g., 10:00 AM - 10:30 AM)"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 text-sm" />
+            </div>
             <input value={form.meet_link} onChange={e => setForm({ ...form, meet_link: e.target.value })}
-              placeholder="Google Meet / Zoom link (optional)"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500" />
-            <div className="flex gap-3">
-              <button type="submit" className="bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all">Schedule</button>
+              placeholder="Meeting link (optional)"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 text-sm" />
+            
+            <div className="flex gap-3 pt-2">
+              <button type="submit" className="bg-white hover:bg-slate-100 text-slate-950 px-6 py-2.5 rounded-xl text-sm font-medium transition-all">Schedule</button>
               <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-colors">Cancel</button>
             </div>
           </form>
         )}
 
         {loading ? (
-          <div className="text-center py-20 text-slate-500">Loading...</div>
+          <div className="text-center py-20 text-slate-500 text-sm">Loading interviews...</div>
         ) : interviews.length === 0 ? (
-          <div className="text-center py-20 text-slate-500">No interviews scheduled.</div>
+          <div className="text-center py-20 text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl">No interviews scheduled.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {interviews.map(interview => (
-              <div key={interview.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-white font-medium">Interview #{interview.id}</p>
-                    <p className="text-slate-500 text-sm">Application #{interview.application_id}</p>
+            {interviews.map(inv => (
+              <div key={inv.id} className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-white font-medium">Interview #{inv.id}</h3>
+                      <p className="text-slate-500 text-sm">App #{inv.application_id}</p>
+                    </div>
+                    <span className="text-[11px] border border-blue-900/50 bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">Scheduled</span>
                   </div>
-                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">Scheduled</span>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <p className="text-slate-400">📅 {new Date(interview.scheduled_date).toLocaleDateString()}</p>
-                  <p className="text-slate-400">🕐 {interview.time_slot}</p>
-                  {interview.meet_link && (
-                    <a href={interview.meet_link} target="_blank" rel="noreferrer"
-                      className="text-violet-400 hover:underline text-xs inline-block">🔗 Join Meeting</a>
-                  )}
+                  <div className="space-y-1 mb-6 text-sm text-slate-400">
+                    <p>Date: <span className="text-white ml-2">{new Date(inv.scheduled_date).toLocaleDateString()}</span></p>
+                    <p>Time: <span className="text-white ml-2">{inv.time_slot}</span></p>
+                    {inv.meet_link && (
+                      <p className="pt-2">
+                        <a href={inv.meet_link} target="_blank" rel="noreferrer" className="text-white hover:underline">Join Meeting ↗</a>
+                      </p>
+                    )}
+                  </div>
                 </div>
                 {user?.role === 'interviewer' && (
-                  <a href={`/evaluate/${interview.id}`}
-                    className="mt-4 block w-full bg-violet-600 hover:bg-violet-500 text-white text-center text-sm font-medium py-2.5 rounded-xl transition-all">
+                  <a href={`/evaluate/${inv.id}`}
+                    className="w-full block bg-white hover:bg-slate-100 text-slate-950 text-center text-sm font-medium py-2.5 rounded-xl transition-all">
                     Submit Evaluation
                   </a>
                 )}

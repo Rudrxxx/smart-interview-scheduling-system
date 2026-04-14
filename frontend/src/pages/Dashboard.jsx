@@ -1,20 +1,34 @@
-import { useAuth } from '../context/AuthContext'
-import Layout from '../components/Layout'
 import { useEffect, useState } from 'react'
+import Layout from '../components/Layout'
 import api from '../api/axios'
+import { useDBUser } from '../components/ClerkAxiosProvider'
 
-function StatCard({ label, value, color }) {
+function StatCard({ label, value }) {
   return (
-    <div className={`bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden`}>
-      <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-20 ${color}`} />
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
       <p className="text-slate-400 text-sm mb-2">{label}</p>
-      <p className="text-3xl font-bold text-white">{value ?? '—'}</p>
+      <p className="text-3xl font-medium text-white">{value ?? '—'}</p>
     </div>
   )
 }
 
+function ActionCard({ href, label, secondary }) {
+  return (
+    <a 
+      href={href} 
+      className={`border rounded-xl p-4 text-sm font-medium transition-all text-center ${
+        secondary 
+          ? 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800' 
+          : 'bg-white border-white text-slate-950 hover:bg-slate-100'
+      }`}
+    >
+      {label}
+    </a>
+  )
+}
+
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user } = useDBUser()
   const [stats, setStats] = useState({})
 
   useEffect(() => {
@@ -45,48 +59,48 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="max-w-5xl space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">
-            Welcome, {user?.name} 👋
+          <h1 className="text-2xl font-medium text-white">
+            Welcome, {user?.name}
           </h1>
-          <p className="text-slate-400 mt-1 capitalize">{user?.role} dashboard</p>
+          <p className="text-slate-400 mt-1 text-sm">Here's an overview of your {user?.role} dashboard.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {user?.role === 'admin' && (
             <>
-              <StatCard label="Total Drives" value={stats.drives} color="bg-violet-500" />
-              <StatCard label="Applications" value={stats.applications} color="bg-cyan-500" />
-              <StatCard label="Interviews" value={stats.interviews} color="bg-amber-500" />
+              <StatCard label="Total Drives" value={stats.drives} />
+              <StatCard label="Applications" value={stats.applications} />
+              <StatCard label="Interviews" value={stats.interviews} />
             </>
           )}
           {user?.role === 'student' && (
-            <StatCard label="My Applications" value={stats.applications} color="bg-cyan-500" />
+            <StatCard label="My Applications" value={stats.applications} />
           )}
           {user?.role === 'interviewer' && (
-            <StatCard label="Assigned Interviews" value={stats.interviews} color="bg-amber-500" />
+            <StatCard label="Assigned Interviews" value={stats.interviews} />
           )}
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-white font-semibold mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="pt-4">
+          <h2 className="text-sm font-medium text-slate-400 mb-4 px-1">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {user?.role === 'admin' && (
               <>
-                <a href="/drives" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">Manage Drives</a>
-                <a href="/applications" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">View Applications</a>
-                <a href="/interviews" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">Schedule Interviews</a>
+                <ActionCard href="/drives" label="Manage Drives" />
+                <ActionCard href="/applications" label="View Applications" secondary />
+                <ActionCard href="/interviews" label="Schedule Interviews" secondary />
               </>
             )}
             {user?.role === 'student' && (
               <>
-                <a href="/drives" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">Browse Drives</a>
-                <a href="/my-applications" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">My Applications</a>
+                <ActionCard href="/drives" label="Browse Drives" />
+                <ActionCard href="/my-applications" label="My Applications" secondary />
               </>
             )}
             {user?.role === 'interviewer' && (
-              <a href="/my-interviews" className="bg-slate-800 hover:bg-slate-700 rounded-xl p-4 text-sm text-slate-300 hover:text-white transition-all text-center">My Interviews</a>
+              <ActionCard href="/my-interviews" label="My Interviews" />
             )}
           </div>
         </div>

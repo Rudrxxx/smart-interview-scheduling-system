@@ -1,9 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { SignedIn, SignedOut, SignIn, SignUp } from '@clerk/clerk-react'
+import ClerkAxiosProvider from './components/ClerkAxiosProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 
-import Login from './pages/Login'
-import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Drives from './pages/Drives'
 import MyApplications from './pages/MyApplications'
@@ -14,13 +13,25 @@ import Results from './pages/Results'
 
 export default function App() {
   return (
-    <AuthProvider>
+    <ClerkAxiosProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Clerk Auth Gateway */}
+          <Route path="/login" element={
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+              <SignIn routing="path" path="/login" signUpUrl="/register" forceRedirectUrl="/dashboard" />
+            </div>
+          } />
+          
+          <Route path="/register" element={
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+              <SignUp routing="path" path="/register" signInUrl="/login" forceRedirectUrl="/dashboard" />
+            </div>
+          } />
+
           <Route path="/" element={<Navigate to="/dashboard" />} />
 
+          {/* Protected Application Layer */}
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
@@ -54,6 +65,6 @@ export default function App() {
           } />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    </ClerkAxiosProvider>
   )
 }

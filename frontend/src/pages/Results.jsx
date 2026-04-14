@@ -1,118 +1,105 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import api from '../api/axios'
+import { useDBUser } from '../components/ClerkAxiosProvider'
 
 export default function Results() {
-  const [drives, setDrives] = useState([])
-  const [selectedDrive, setSelectedDrive] = useState(null)
+  const { user } = useDBUser()
   const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [publishing, setPublishing] = useState(false)
-  const [message, setMessage] = useState('')
+  const [drives, setDrives] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedDrive, setSelectedDrive] = useState('')
 
-  useEffect(() => {
-    api.get('/api/drives/').then(res => setDrives(res.data))
-  }, [])
-
-  const loadResults = async (driveId) => {
-    setLoading(true)
-    setSelectedDrive(driveId)
+  const fetchResults = async (driveId = '') => {
     try {
-      const res = await api.get(`/api/results/drive/${driveId}`)
+      const res = await api.get(driveId ? `/api/results/drive/${driveId}` : '/api/results/')
       setResults(res.data)
     } catch {}
     setLoading(false)
   }
 
-  const publishAll = async () => {
-    if (!selectedDrive) return
-    setPublishing(true)
-    try {
-      const res = await api.post(`/api/results/publish-drive/${selectedDrive}`)
-      setMessage(`Published ${res.data.length} results!`)
-      loadResults(selectedDrive)
-    } catch (err) {
-      setMessage(err.response?.data?.detail || 'Error publishing')
+  useEffect(() => {
+    fetchResults()
+    if (user?.role === 'admin') {
+      api.get('/api/drives/').then(res => setDrives(res.data))
     }
-    setPublishing(false)
-  }
+  }, [user])
 
-  const statusColors = {
-    selected: 'bg-green-500/20 text-green-400',
-    rejected: 'bg-red-500/20 text-red-400',
-    interviewed: 'bg-violet-500/20 text-violet-400',
-    applied: 'bg-blue-500/20 text-blue-400',
-    scheduled: 'bg-amber-500/20 text-amber-400',
+  useEffect(() => {
+    if (selectedDrive) fetchResults(selectedDrive)
+    else fetchResults()
+  }, [selectedDrive])
+
+  const handlePublish = async (applicationId) => {
+    await api.post(`/api/results/publish/${applicationId}`)
+    fetchResults(selectedDrive)
   }
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="max-w-6xl space-y-6">
+        <div className="flex flex-col sm:flex-row items-baseline justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Results</h1>
-            <p className="text-slate-400 text-sm mt-1">Publish and view drive results</p>
+            <h1 className="text-2xl font-medium text-white">Evaluation Results</h1>
+            <p className="text-slate-400 text-sm mt-1">Review finalized interview scores</p>
           </div>
-          {selectedDrive && (
-            <button onClick={publishAll} disabled={publishing}
-              className="bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
-              {publishing ? 'Publishing...' : '🚀 Publish All Results'}
-            </button>
+          
+          {user?.role === 'admin' && (
+            <select 
+              value={selectedDrive} onChange={e => setSelectedDrive(e.target.value)}
+              className="bg-slate-900 border border-slate-800 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-slate-500 appearance-none min-w-[200px]"
+            >
+              <option value="">All Drives</option>
+              {drives.map(d => (
+                <option key={d.id} value={d.id}>{d.title}</option>
+              ))}
+            </select>
           )}
         </div>
 
-        {message && (
-          <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-xl">{message}</div>
-        )}
-
-        <div className="flex gap-3 flex-wrap">
-          {drives.map(drive => (
-            <button key={drive.id}
-              onClick={() => loadResults(drive.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-                selectedDrive === drive.id
-                  ? 'bg-violet-600 border-violet-600 text-white'
-                  : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
-              }`}>
-              {drive.title}
-            </button>
-          ))}
-        </div>
-
         {loading ? (
-          <div className="text-center py-20 text-slate-500">Loading results...</div>
-        ) : results.length > 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-800">
-                  <th className="text-left text-slate-400 text-xs px-6 py-4">App ID</th>
-                  <th className="text-left text-slate-400 text-xs px-6 py-4">Student ID</th>
-                  <th className="text-left text-slate-400 text-xs px-6 py-4">Score</th>
-                  <th className="text-left text-slate-400 text-xs px-6 py-4">Status</th>
-                  <th className="text-left text-slate-400 text-xs px-6 py-4">Feedback</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map(r => (
-                  <tr key={r.application_id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
-                    <td className="px-6 py-4 text-slate-400 text-sm">#{r.application_id}</td>
-                    <td className="px-6 py-4 text-white text-sm">#{r.student_id}</td>
-                    <td className="px-6 py-4 text-white text-sm font-mono">{r.score ?? '—'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full capitalize ${statusColors[r.status] || 'bg-slate-700 text-slate-400'}`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-400 text-sm max-w-xs truncate">{r.feedback || '—'}</td>
+          <div className="text-center py-20 text-slate-500 text-sm">Loading results...</div>
+        ) : (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-950/50 text-slate-500 uppercase text-[11px] tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="px-6 py-4">App ID</th>
+                    <th className="px-6 py-4">Student</th>
+                    <th className="px-6 py-4">Score</th>
+                    <th className="px-6 py-4">Feedback</th>
+                    {user?.role === 'admin' && <th className="px-6 py-4 text-right">Actions</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {results.map(res => (
+                    <tr key={res.Application.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-6 py-4 text-slate-400 font-mono">#{res.Application.id}</td>
+                      <td className="px-6 py-4 text-white">Student #{res.Application.student_id}</td>
+                      <td className="px-6 py-4 font-mono text-white">{res.Evaluation.score}/100</td>
+                      <td className="px-6 py-4 text-slate-400 max-w-xs truncate">{res.Evaluation.feedback}</td>
+                      {user?.role === 'admin' && (
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handlePublish(res.Application.id)}
+                            disabled={res.Application.status === 'selected'}
+                            className="text-xs bg-white text-slate-950 px-3 py-1.5 rounded-lg font-medium hover:bg-slate-200 disabled:bg-slate-800 disabled:text-slate-500 transition-colors"
+                          >
+                            {res.Application.status === 'selected' ? 'Published' : 'Publish Result'}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {results.length === 0 && (
+              <div className="px-6 py-10 text-center text-slate-500 text-sm">No results available yet.</div>
+            )}
           </div>
-        ) : selectedDrive ? (
-          <div className="text-center py-20 text-slate-500">No results for this drive yet.</div>
-        ) : null}
+        )}
       </div>
     </Layout>
   )
