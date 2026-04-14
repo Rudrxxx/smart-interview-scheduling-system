@@ -14,11 +14,11 @@ function StatCard({ label, value }) {
 
 function ActionCard({ href, label, secondary }) {
   return (
-    <a 
-      href={href} 
+    <a
+      href={href}
       className={`border rounded-xl p-4 text-sm font-medium transition-all text-center ${
-        secondary 
-          ? 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800' 
+        secondary
+          ? 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
           : 'bg-white border-white text-slate-950 hover:bg-slate-100'
       }`}
     >
@@ -28,10 +28,13 @@ function ActionCard({ href, label, secondary }) {
 }
 
 export default function Dashboard() {
-  const { user } = useDBUser()
+  const { user, loading: userLoading } = useDBUser()
   const [stats, setStats] = useState({})
 
   useEffect(() => {
+    // Guard: don't run until user is loaded
+    if (!user) return
+
     const loadStats = async () => {
       try {
         if (user.role === 'admin') {
@@ -57,6 +60,14 @@ export default function Dashboard() {
     loadStats()
   }, [user])
 
+  if (userLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64 text-slate-500 text-sm">Loading dashboard...</div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="max-w-5xl space-y-8">
@@ -64,7 +75,9 @@ export default function Dashboard() {
           <h1 className="text-2xl font-medium text-white">
             Welcome, {user?.name}
           </h1>
-          <p className="text-slate-400 mt-1 text-sm">Here's an overview of your {user?.role} dashboard.</p>
+          <p className="text-slate-400 mt-1 text-sm capitalize">
+            {user?.role} dashboard
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -72,7 +85,7 @@ export default function Dashboard() {
             <>
               <StatCard label="Total Drives" value={stats.drives} />
               <StatCard label="Applications" value={stats.applications} />
-              <StatCard label="Interviews" value={stats.interviews} />
+              <StatCard label="Interviews Scheduled" value={stats.interviews} />
             </>
           )}
           {user?.role === 'student' && (
@@ -91,6 +104,7 @@ export default function Dashboard() {
                 <ActionCard href="/drives" label="Manage Drives" />
                 <ActionCard href="/applications" label="View Applications" secondary />
                 <ActionCard href="/interviews" label="Schedule Interviews" secondary />
+                <ActionCard href="/users" label="Manage Users" secondary />
               </>
             )}
             {user?.role === 'student' && (

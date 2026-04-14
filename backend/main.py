@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Depends
-from core.dependencies import get_current_user
 from core.database import Base, engine
 
 # Import all models so SQLAlchemy creates the tables
@@ -12,6 +11,7 @@ from models.interview import Interview
 from models.evaluation import Evaluation
 
 # Import controllers
+from controllers.user_controller import router as user_router
 from controllers.drive_controller import router as drive_router
 from controllers.application_controller import router as application_router
 from controllers.interview_controller import router as interview_router
@@ -30,13 +30,18 @@ app = FastAPI(
 # CORS — allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:5173", "http://localhost:3000",
+        "http://127.0.0.1:5173", "http://127.0.0.1:3000",
+        "http://localhost:5174", "http://127.0.0.1:5174"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Register all routes
+app.include_router(user_router)
 app.include_router(drive_router)
 app.include_router(application_router)
 app.include_router(interview_router)
@@ -47,7 +52,3 @@ app.include_router(result_router)
 @app.get("/")
 def root():
     return {"message": "Smart Interview Scheduling System API is running!"}
-
-@app.get("/api/users/me")
-def get_me(current_user: User = Depends(get_current_user)):
-    return current_user

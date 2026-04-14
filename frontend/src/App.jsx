@@ -10,28 +10,28 @@ import Applications from './pages/Applications'
 import Interviews from './pages/Interviews'
 import Evaluate from './pages/Evaluate'
 import Results from './pages/Results'
+import Users from './pages/Users'
+import Home from './pages/Home'
 
 export default function App() {
   return (
     <ClerkAxiosProvider>
       <BrowserRouter>
         <Routes>
-          {/* Clerk Auth Gateway */}
           <Route path="/login" element={
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
               <SignIn routing="path" path="/login" signUpUrl="/register" forceRedirectUrl="/dashboard" />
             </div>
           } />
-          
+
           <Route path="/register" element={
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
               <SignUp routing="path" path="/register" signInUrl="/login" forceRedirectUrl="/dashboard" />
             </div>
           } />
 
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Home />} />
 
-          {/* Protected Application Layer */}
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
@@ -63,6 +63,12 @@ export default function App() {
           <Route path="/results" element={
             <ProtectedRoute roles={['admin']}><Results /></ProtectedRoute>
           } />
+
+          <Route path="/users" element={
+            <ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>
+          } />
+
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
     </ClerkAxiosProvider>

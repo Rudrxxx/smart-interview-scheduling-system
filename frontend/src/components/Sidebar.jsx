@@ -7,6 +7,7 @@ const adminLinks = [
   { to: '/applications', label: 'Applications', icon: '◎' },
   { to: '/interviews', label: 'Interviews', icon: '◷' },
   { to: '/results', label: 'Results', icon: '◉' },
+  { to: '/users', label: 'Users', icon: '◐' },
 ]
 
 const studentLinks = [

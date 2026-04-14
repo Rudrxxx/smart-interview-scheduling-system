@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.dependencies import require_role
@@ -19,7 +19,8 @@ def publish_drive_results(drive_id: int, db: Session = Depends(get_db),
                           current_user=Depends(require_role("admin"))):
     from services.result_service import ResultService
     service = ResultService(db)
-    return service.publish_drive_results(drive_id)
+    results = service.publish_drive_results(drive_id)
+    return {"published": len(results), "results": results}
 
 
 @router.get("/drive/{drive_id}")
