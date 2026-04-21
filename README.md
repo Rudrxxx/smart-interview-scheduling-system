@@ -246,5 +246,3 @@ This project demonstrates:
 * Clean architecture implementation
 * Modern authentication (Clerk)
 * Scalable and maintainable codebase
-
-It is designed not just as a college project, but as a **production-ready system foundation**.
