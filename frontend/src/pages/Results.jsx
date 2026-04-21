@@ -1,73 +1,69 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import api from '../api/axios'
-import { useDBUser } from '../components/ClerkAxiosProvider'
+
+const statusColors = {
+  pending: { bg: 'rgba(212,168,67,0.15)', color: '#d4a843' },
+  shortlisted: { bg: 'rgba(212,168,67,0.3)', color: '#d4a843' },
+  accepted: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  selected: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  rejected: { bg: 'rgba(220,50,50,0.15)', color: '#dc3232' },
+}
+const recColors = {
+  proceed: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  hold: { bg: 'rgba(212,168,67,0.15)', color: '#d4a843' },
+  reject: { bg: 'rgba(220,50,50,0.15)', color: '#dc3232' },
+}
+
+function ScoreText({ score }) {
+  if (score == null) return <span style={{ color: '#2a2520' }}>—</span>
+  let color = '#dc3232'
+  if (score >= 7) color = '#d4a843'
+  else if (score >= 5) color = '#d4a843'
+  return <span className="font-mono font-bold" style={{ color }}>{score}</span>
+}
 
 export default function Results() {
-  const { user } = useDBUser()
   const [results, setResults] = useState([])
   const [drives, setDrives] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedDrive, setSelectedDrive] = useState('')
-  const [publishing, setPublishing] = useState(null)
 
-  const fetchResults = async (driveId = '') => {
+  const fetchData = async () => {
     setLoading(true)
     try {
-      if (!driveId) {
-        // No global results endpoint — fetch all drives and aggregate
-        const drivesRes = await api.get('/api/drives/')
-        const allResults = []
-        for (const drive of drivesRes.data) {
-          try {
-            const res = await api.get(`/api/results/drive/${drive.id}`)
-            allResults.push(...res.data.map(r => ({ ...r, drive_title: drive.title })))
-          } catch {}
+      const drivesRes = await api.get('/api/drives/')
+      setDrives(drivesRes.data)
+      let data = []
+      try {
+        if (selectedDrive) {
+          data = (await api.get(`/api/results/drive/${selectedDrive}`)).data
+        } else {
+          for (const drive of drivesRes.data) {
+            try { const r = await api.get(`/api/results/drive/${drive.id}`); data.push(...r.data.map(x => ({ ...x, drive_title: drive.title }))) } catch {}
+          }
         }
-        setResults(allResults)
-      } else {
-        const driveTitle = drives.find(d => String(d.id) === String(driveId))?.title || `Drive #${driveId}`
-        const res = await api.get(`/api/results/drive/${driveId}`)
-        setResults(res.data.map(r => ({ ...r, drive_title: driveTitle })))
+      } catch {
+        try { data = (await api.get('/api/applications/')).data } catch {}
       }
+      if (selectedDrive) {
+        const t = drivesRes.data.find(d => String(d.id) === String(selectedDrive))?.title || ''
+        data = data.map(r => ({ ...r, drive_title: r.drive_title || t }))
+      }
+      setResults(data)
     } catch {}
     setLoading(false)
   }
 
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      api.get('/api/drives/').then(res => {
-        setDrives(res.data)
-      })
-    }
-  }, [user])
+  useEffect(() => { fetchData() }, [selectedDrive])
 
-  useEffect(() => {
-    if (user) fetchResults(selectedDrive)
-  }, [selectedDrive, user])
-
-  const handlePublish = async (applicationId) => {
-    setPublishing(applicationId)
-    try {
-      await api.post(`/api/results/publish/${applicationId}`)
-      fetchResults(selectedDrive)
-    } catch {}
-    setPublishing(null)
-  }
-
-  const handlePublishAll = async () => {
-    if (!selectedDrive) return
-    try {
-      await api.post(`/api/results/publish-drive/${selectedDrive}`)
-      fetchResults(selectedDrive)
-    } catch {}
-  }
-
-  const getStatusStyle = (status) => {
-    if (status === 'selected') return 'bg-green-900/30 text-green-400 border-green-900/50'
-    if (status === 'rejected') return 'bg-red-900/30 text-red-400 border-red-900/50'
-    if (status === 'interviewed') return 'bg-yellow-900/30 text-yellow-400 border-yellow-900/50'
-    return 'bg-slate-800 text-slate-400 border-slate-700'
+  const exportCSV = () => {
+    const h = ['Candidate', 'Email', 'Drive', 'Score', 'Recommendation', 'Status']
+    const rows = results.map(r => [r.student_name || r.candidate_name || `#${r.student_id || r.application_id}`, r.student_email || r.email || '', r.drive_title || '', r.score ?? '', r.recommendation || r.feedback || '', r.status || ''])
+    const csv = [h, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const b = new Blob([csv], { type: 'text/csv' })
+    const u = URL.createObjectURL(b)
+    const a = document.createElement('a'); a.href = u; a.download = `results_${new Date().toISOString().split('T')[0]}.csv`; a.click(); URL.revokeObjectURL(u)
   }
 
   return (
@@ -75,95 +71,47 @@ export default function Results() {
       <div className="max-w-6xl space-y-6">
         <div className="flex flex-col sm:flex-row items-baseline justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-medium text-white">Evaluation Results</h1>
-            <p className="text-slate-400 text-sm mt-1">Review and publish interview scores</p>
+            <h1 className="text-xl font-bold font-serif" style={{ color: '#f5f0e8' }}>Results</h1>
+            <p className="text-sm mt-1" style={{ color: '#6b6459' }}>{results.length} records</p>
           </div>
-
-          {user?.role === 'admin' && (
-            <div className="flex items-center gap-3">
-              {selectedDrive && (
-                <button
-                  onClick={handlePublishAll}
-                  className="bg-white hover:bg-slate-100 text-slate-950 text-sm font-medium px-4 py-2 rounded-xl transition-all"
-                >
-                  Publish All
-                </button>
-              )}
-              <select
-                value={selectedDrive} onChange={e => setSelectedDrive(e.target.value)}
-                className="bg-slate-900 border border-slate-800 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-slate-500 min-w-[200px]"
-              >
+          <div className="flex items-center gap-3">
+            <button onClick={exportCSV} disabled={results.length === 0} className="px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 flex items-center gap-2" style={{ background: '#d4a843', color: '#0a0a0a' }}>↓ Export CSV</button>
+            <div className="relative">
+              <select value={selectedDrive} onChange={e => setSelectedDrive(e.target.value)} className="rounded-xl px-4 py-2.5 text-sm focus:outline-none appearance-none min-w-[180px]" style={{ background: '#161412', border: '1px solid #2a2520', color: '#f5f0e8' }}>
                 <option value="">All Drives</option>
-                {drives.map(d => (
-                  <option key={d.id} value={d.id}>{d.title}</option>
-                ))}
+                {drives.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
               </select>
             </div>
-          )}
+          </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-20 text-slate-500 text-sm">Loading results...</div>
-        ) : (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-950/50 text-slate-500 uppercase text-[11px] tracking-wider font-semibold border-b border-slate-800">
-                  <tr>
-                    <th className="px-6 py-4">App ID</th>
-                    <th className="px-6 py-4">Student</th>
-                    <th className="px-6 py-4">Drive</th>
-                    <th className="px-6 py-4">Score</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Feedback</th>
-                    {user?.role === 'admin' && <th className="px-6 py-4 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {results.map(r => (
-                    // Backend returns: { application_id, student_id, status, score, feedback }
-                    <tr key={r.application_id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4 text-slate-400 font-mono">#{r.application_id}</td>
-                      <td className="px-6 py-4 text-white">Student #{r.student_id}</td>
-                      <td className="px-6 py-4 text-slate-400">{r.drive_title || '—'}</td>
-                      <td className="px-6 py-4 font-mono text-white">
-                        {r.score !== null ? `${r.score}/100` : <span className="text-slate-600">Pending</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs px-2.5 py-1 rounded-full capitalize font-medium border ${getStatusStyle(r.status)}`}>
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400 max-w-xs truncate">
-                        {r.feedback || <span className="text-slate-600">—</span>}
-                      </td>
-                      {user?.role === 'admin' && (
-                        <td className="px-6 py-4 text-right">
-                          {r.status === 'interviewed' && (
-                            <button
-                              onClick={() => handlePublish(r.application_id)}
-                              disabled={publishing === r.application_id}
-                              className="text-xs bg-white text-slate-950 px-3 py-1.5 rounded-lg font-medium hover:bg-slate-200 disabled:opacity-50 transition-colors"
-                            >
-                              {publishing === r.application_id ? 'Publishing...' : 'Publish Result'}
-                            </button>
-                          )}
-                          {r.status === 'selected' && (
-                            <span className="text-xs text-green-400 font-medium">✓ Selected</span>
-                          )}
-                          {r.status === 'rejected' && (
-                            <span className="text-xs text-red-400 font-medium">✗ Rejected</span>
-                          )}
-                        </td>
-                      )}
+        {loading ? <div className="text-center py-20 text-sm" style={{ color: '#6b6459' }}>Loading...</div> : (
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0a0a0a', border: '1px solid #2a2520' }}>
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead><tr style={{ background: '#161412', borderBottom: '1px solid #2a2520' }}>
+                {['Candidate', 'Email', 'Drive', 'Score', 'Recommendation', 'Status'].map((h, i) => (
+                  <th key={i} className="px-6 py-4 text-xs uppercase tracking-wider font-medium" style={{ color: '#6b6459' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {results.map((r, idx) => {
+                  const sc = statusColors[r.status] || statusColors.pending
+                  const rc = recColors[r.recommendation]
+                  return (
+                    <tr key={r.id || r.application_id || idx} style={{ borderBottom: '1px solid #2a2520' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#161412'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <td className="px-6 py-4 font-medium" style={{ color: '#f5f0e8' }}>{r.student_name || r.candidate_name || `#${r.student_id || r.application_id}`}</td>
+                      <td className="px-6 py-4" style={{ color: '#6b6459' }}>{r.student_email || r.email || '—'}</td>
+                      <td className="px-6 py-4" style={{ color: '#6b6459' }}>{r.drive_title || '—'}</td>
+                      <td className="px-6 py-4"><ScoreText score={r.score} /></td>
+                      <td className="px-6 py-4">{rc ? <span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: rc.bg, color: rc.color }}>{r.recommendation}</span> : <span style={{ color: '#6b6459' }}>{r.feedback || '—'}</span>}</td>
+                      <td className="px-6 py-4"><span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: sc.bg, color: sc.color }}>{r.status || 'pending'}</span></td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {results.length === 0 && (
-              <div className="px-6 py-10 text-center text-slate-500 text-sm">No results available yet.</div>
-            )}
+                  )
+                })}
+              </tbody>
+            </table>
+            {results.length === 0 && <div className="px-6 py-12 text-center text-sm" style={{ color: '#6b6459' }}>{selectedDrive ? 'No results for this drive.' : 'No results yet.'}</div>}
           </div>
         )}
       </div>
