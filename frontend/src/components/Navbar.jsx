@@ -1,31 +1,31 @@
 import { Link } from 'react-router-dom'
-import { UserButton, useUser } from '@clerk/clerk-react'
-import { useDBUser } from './ClerkAxiosProvider'
+import { useAuth } from '../context/AuthContext'
 
 export default function Navbar() {
-  const { user: dbUser } = useDBUser()
-  const { user: clerkUser } = useUser()
+  const { user, logout } = useAuth()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
-            <span className="text-slate-950 font-bold text-sm">SI</span>
-          </div>
-          <span className="text-white font-medium tracking-tight">SmartInterview</span>
-        </Link>
+    <nav className="fixed top-0 w-full h-16 flex items-center justify-between px-6 z-50" style={{ background: '#0a0a0a', borderBottom: '1px solid #2a2520' }}>
+      <Link to="/" className="flex items-center gap-3 no-underline">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#d4a843' }}>
+          <span className="font-bold text-sm" style={{ color: '#0a0a0a' }}>SI</span>
+        </div>
+        <span className="font-serif font-semibold tracking-tight" style={{ color: '#f5f0e8' }}>SmartInterview</span>
+      </Link>
 
-        {clerkUser && (
-          <div className="flex items-center gap-4">
-            {dbUser && (
-              <span className="text-xs px-3 py-1 bg-slate-800 text-slate-300 rounded-xl font-medium capitalize">
-                {dbUser.role}
-              </span>
-            )}
-            <span className="text-slate-400 text-sm">{dbUser?.name || clerkUser.fullName}</span>
-            <UserButton afterSignOutUrl="/login" appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8 rounded-xl' } }} />
-          </div>
+      <div className="flex items-center gap-4">
+        {user ? (
+          <>
+            <span className="hidden sm:inline-block rounded-lg px-3 py-1 text-xs font-medium uppercase tracking-widest" style={{ background: 'rgba(212,168,67,0.1)', color: '#d4a843' }}>
+              {user.role}
+            </span>
+            <span className="text-sm font-medium hidden sm:block" style={{ color: '#f5f0e8' }}>{user.name}</span>
+            <button onClick={logout} className="px-4 py-2 rounded-xl text-sm font-medium transition-all" style={{ border: '1px solid #d4a843', color: '#d4a843', background: 'transparent' }}>
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <div className="w-8 h-8 rounded-full animate-pulse" style={{ background: '#161412' }}></div>
         )}
       </div>
     </nav>

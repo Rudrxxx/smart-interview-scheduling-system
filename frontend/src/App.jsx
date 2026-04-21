@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { SignedIn, SignedOut, SignIn, SignUp } from '@clerk/clerk-react'
-import ClerkAxiosProvider from './components/ClerkAxiosProvider'
+import AuthAxiosProvider from './components/AuthAxiosProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import Dashboard from './pages/Dashboard'
@@ -12,24 +11,16 @@ import Evaluate from './pages/Evaluate'
 import Results from './pages/Results'
 import Users from './pages/Users'
 import Home from './pages/Home'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
 export default function App() {
   return (
-    <ClerkAxiosProvider>
+    <AuthAxiosProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-              <SignIn routing="path" path="/login" signUpUrl="/register" forceRedirectUrl="/dashboard" />
-            </div>
-          } />
-
-          <Route path="/register" element={
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-              <SignUp routing="path" path="/register" signInUrl="/login" forceRedirectUrl="/dashboard" />
-            </div>
-          } />
-
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<Home />} />
 
           <Route path="/dashboard" element={
@@ -71,6 +62,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
-    </ClerkAxiosProvider>
+    </AuthAxiosProvider>
   )
 }

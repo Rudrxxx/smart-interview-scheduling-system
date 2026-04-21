@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { useDBUser } from './ClerkAxiosProvider'
+import { useAuth } from '../context/AuthContext'
 
 const adminLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: '⬡' },
@@ -9,47 +9,42 @@ const adminLinks = [
   { to: '/results', label: 'Results', icon: '◉' },
   { to: '/users', label: 'Users', icon: '◐' },
 ]
-
 const studentLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: '⬡' },
   { to: '/drives', label: 'Browse Drives', icon: '◈' },
   { to: '/my-applications', label: 'My Applications', icon: '◎' },
 ]
-
 const interviewerLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: '⬡' },
   { to: '/my-interviews', label: 'My Interviews', icon: '◷' },
 ]
 
 export default function Sidebar() {
-  const { user } = useDBUser()
-  const links = user?.role === 'admin' ? adminLinks
-    : user?.role === 'student' ? studentLinks
-    : interviewerLinks
+  const { user } = useAuth()
+  const links = user?.role === 'admin' ? adminLinks : user?.role === 'student' ? studentLinks : interviewerLinks
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-64 bg-slate-950 border-r border-slate-800 flex flex-col">
-      <nav className="flex-1 p-4 space-y-1">
+    <aside className="fixed left-0 top-16 bottom-0 w-64 flex flex-col" style={{ background: '#0a0a0a', borderRight: '1px solid #2a2520' }}>
+      <nav className="flex-1 py-4 space-y-1">
         {links.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/dashboard'}
+          <NavLink key={to} to={to} end={to === '/dashboard'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all border border-transparent ${
-                isActive
-                  ? 'bg-slate-900 border-slate-800 text-white font-medium'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              `flex items-center gap-3 mx-2 px-4 py-2.5 rounded-xl text-sm transition-all border-l-2 ${
+                isActive ? 'border-amber-500 font-medium' : 'border-transparent'
               }`
             }
+            style={({ isActive }) => ({
+              color: isActive ? '#d4a843' : '#6b6459',
+              background: isActive ? 'rgba(212,168,67,0.05)' : 'transparent',
+            })}
           >
-            <span className="text-base text-slate-500">{icon}</span>
+            <span className="text-base opacity-70">{icon}</span>
             {label}
           </NavLink>
         ))}
       </nav>
-      <div className="p-4 border-t border-slate-800">
-        <p className="text-xs text-slate-600 px-4">SmartInterview v1.0</p>
+      <div className="p-4" style={{ borderTop: '1px solid #2a2520' }}>
+        <p className="text-xs px-4" style={{ color: '#6b6459' }}>SmartInterview v1.0</p>
       </div>
     </aside>
   )
