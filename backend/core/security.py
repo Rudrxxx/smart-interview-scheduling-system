@@ -1,59 +1,38 @@
 import os
-import httpx
+from datetime import datetime, timedelta
+from passlib.context import CryptContext
 from jose import jwt, JWTError
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from dotenv import load_dotenv
 
 load_dotenv()
 
-CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL")
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
-class ClerkJWTVerifier:
-    def __init__(self):
-        self.jwks = None
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    def get_jwks(self):
-        if not self.jwks:
-            if not CLERK_JWKS_URL:
-                raise ValueError("CLERK_JWKS_URL is not configured in environment variables.")
-            response = httpx.get(CLERK_JWKS_URL)
-            response.raise_for_status()
-            self.jwks = response.json()
-        return self.jwks
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
-    def verify_token(self, token: str):
-        try:
-            jwks = self.get_jwks()
-            unverified_header = jwt.get_unverified_header(token)
-            
-            rsa_key = {}
-            for key in jwks.get("keys", []):
-                if key["kid"] == unverified_header.get("kid"):
-                    rsa_key = {
-                        "kty": key["kty"],
-                        "kid": key["kid"],
-                        "use": key["use"],
-                        "n": key["n"],
-                        "e": key["e"]
-                    }
-            
-            if not rsa_key:
-                raise HTTPException(status_code=401, detail="Unable to find appropriate JWKS key.")
-                
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=["RS256"],
-                options={"verify_aud": False, "verify_iss": False}
-            )
-            return payload
-            
-        except JWTError as e:
-            raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=401, detail=str(e))
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
-verifier = ClerkJWTVerifier()
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-def decode_clerk_token(token: str):
-    return verifier.verify_token(token)
+def decode_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
