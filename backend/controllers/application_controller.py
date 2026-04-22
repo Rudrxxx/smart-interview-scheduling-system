@@ -34,7 +34,21 @@ def drive_applications(drive_id: int, db: Session = Depends(get_db),
 def all_applications(db: Session = Depends(get_db),
                      current_user=Depends(require_role("admin"))):
     service = ApplicationService(db)
-    return service.get_all()
+    apps = service.get_all()
+    return [_enrich_app(a) for a in apps]
+
+
+def _enrich_app(a):
+    return {
+        "id": a.id,
+        "student_id": a.student_id,
+        "drive_id": a.drive_id,
+        "status": a.status,
+        "applied_at": a.applied_at,
+        "student_name": a.student.name if a.student else None,
+        "student_email": a.student.email if a.student else None,
+        "drive_title": a.drive.title if a.drive else None,
+    }
 
 
 @router.patch("/{app_id}/status")
