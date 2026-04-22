@@ -1,44 +1,48 @@
 # Smart Interview Scheduling System
 
-## Project Overview
+A full-stack campus recruitment platform that streamlines the entire hiring workflow — from drive creation to interview scheduling and evaluation.
 
-The **Smart Interview Scheduling System** is a full-stack web application designed to streamline and automate the recruitment workflow for organizations and institutions.
-
-It provides a structured platform where:
-
-* **Admins** create and manage recruitment drives
-* **Students/Candidates** apply for opportunities
-* **Interviewers** evaluate candidates
-* The system handles **scheduling, tracking, and result publishing**
-
-The system follows **clean architecture principles**, emphasizing backend design, scalability, and maintainability.
+Built with **FastAPI** (Python) on the backend and **React** (Vite) on the frontend.
 
 ---
 
-# Tech Stack
+## Features
 
-## Frontend
+### For Admins
+- Create & manage **recruitment drives** with eligibility criteria and deadlines
+- View and manage all **student applications** — shortlist or reject with one click
+- **Schedule interviews** by assigning interviewers, date/time, round number, and Google Meet links
+- View all interviews with enriched data (candidate name, drive title, interviewer)
+- Manage **user roles** — promote students to interviewers or admins
+- Publish **evaluation results**
 
-* React (Vite)
-* Tailwind CSS (Minimal, Linear-inspired UI)
-* Clerk (Authentication)
+### For Students
+- Browse **active recruitment drives** and apply instantly
+- Track application status in **My Applications**
+- View interview schedule and join Google Meet links
 
-## Backend
-
-* FastAPI (Python)
-* PostgreSQL (via Supabase)
-* SQLAlchemy (ORM)
-* Pydantic (Validation)
-
-## Authentication
-
-* Clerk (JWT RS256 via JWKS)
-* Backend verifies Clerk tokens
-* Role-based authorization handled internally
+### For Interviewers
+- View **assigned interviews** with candidate details
+- Join Google Meet directly from the dashboard
+- Submit **evaluations** with scores and feedback
 
 ---
 
-# Architecture
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18, Vite 5, Tailwind CSS |
+| **Backend** | FastAPI, Python 3.11, Uvicorn |
+| **Database** | PostgreSQL (Supabase) |
+| **ORM** | SQLAlchemy |
+| **Validation** | Pydantic v2 |
+| **Auth** | JWT (HS256) with bcrypt password hashing |
+| **HTTP Client** | Axios |
+
+---
+
+## Architecture
 
 The backend follows **clean layered architecture**:
 
@@ -46,203 +50,154 @@ The backend follows **clean layered architecture**:
 Controllers → Services → Repositories → Database
 ```
 
-## Layers:
+- **Controllers** — Handle HTTP request/response, route definitions
+- **Services** — Business logic and application workflows
+- **Repositories** — Database interaction and query abstraction
+- **Models** — SQLAlchemy entity definitions
+- **Schemas** — Pydantic request/response validation
 
-### 1. Controllers
-
-* Handle HTTP requests/responses
-* Route definitions
-
-### 2. Services
-
-* Business logic
-* Application workflows
-
-### 3. Repositories
-
-* Database interaction
-* Query abstraction
-
-### 4. Models
-
-* Database schema (SQLAlchemy)
-* Entity definitions
+### Design Patterns Used
+- Repository Pattern
+- Service Layer Pattern
+- Dependency Injection (FastAPI)
+- Clean Architecture Separation
 
 ---
 
-# Core Entities
+## Core Entities
 
-* User (Admin / Student / Interviewer)
-* RecruitmentDrive
-* Application
-* Interview
-* Evaluation
-
----
-
-# Authentication & Authorization
-
-## Authentication
-
-* Managed by Clerk (frontend)
-* Backend verifies Clerk JWT using JWKS
-
-## Authorization
-
-* Role-based access:
-
-  * Admin
-  * Student
-  * Interviewer
+| Entity | Description |
+|---|---|
+| **User** | Admin, Student, or Interviewer (role-based) |
+| **RecruitmentDrive** | Job posting with eligibility, deadline, and status |
+| **Application** | Student's application to a drive |
+| **Interview** | Scheduled interview with date, round, and meet link |
+| **Evaluation** | Interviewer's score and feedback for an interview |
 
 ---
 
-# MUST-HAVE FEATURES (Core Functionality)
+## Getting Started
 
-## User Management
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ (or use `nvm`)
+- PostgreSQL database (Supabase recommended)
 
-* Clerk-based authentication
-* Automatic user creation in DB
-* Role assignment (default: student)
+### Backend Setup
 
----
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-## Recruitment Drive Management (Admin)
+Create `backend/.env`:
+```
+DATABASE_URL=postgresql://your_connection_string
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+```
 
-* Create recruitment drives
-* Define eligibility criteria
-* Manage drive status (active/closed)
+Seed demo data:
+```bash
+python seed.py
+```
 
----
+Run the server:
+```bash
+uvicorn main:app --reload --port 8000
+```
 
-## Application System (Student)
+### Frontend Setup
 
-* Apply to recruitment drives
-* Track application status
-* View applied drives
+```bash
+cd frontend
+npm install
+```
 
----
+Create `frontend/.env`:
+```
+VITE_API_URL=http://localhost:8000
+```
 
-## Interview Scheduling
+Run the dev server:
+```bash
+npm run dev
+```
 
-* Automatic/manual scheduling
-* Assign interviewer
-* Manage time slots
+### Demo Accounts
 
----
-
-## Interview Management (Interviewer)
-
-* View assigned interviews
-* Submit evaluation
-* Provide score and feedback
-
----
-
-## Evaluation & Results
-
-* Store evaluation data
-* Calculate final results
-* Admin publishes results
-
----
-
-# ADVANCED / BONUS FEATURES (High-Impact)
-
-## Smart Scheduling (Optional)
-
-* Auto-assign interviewer based on availability
-* Avoid scheduling conflicts
-
----
-
-## Dashboard Analytics
-
-* Total applicants
-* Selection rate
-* Drive performance
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@demo.com | demo123 |
+| Student | student@demo.com | demo123 |
+| Interviewer | interviewer@demo.com | demo123 |
 
 ---
 
-## Notifications (Optional)
+## API Endpoints
 
-* Email/real-time updates
-* Status changes
+### Auth
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login and get JWT token |
+| GET | `/api/users/me` | Get current user profile |
+
+### Recruitment Drives
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/drives/` | All users (students see active only) |
+| POST | `/api/drives/` | Admin |
+| PUT | `/api/drives/:id` | Admin |
+| DELETE | `/api/drives/:id` | Admin |
+
+### Applications
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/applications/` | Student |
+| GET | `/api/applications/my` | Student |
+| GET | `/api/applications/` | Admin |
+| PATCH | `/api/applications/:id/status` | Admin |
+
+### Interviews
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/interviews/` | Admin |
+| GET | `/api/interviews/` | Admin |
+| GET | `/api/interviews/my` | Interviewer |
+
+### Evaluations
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/evaluations/` | Interviewer |
+| GET | `/api/evaluations/interview/:id` | Admin |
 
 ---
 
-## Filtering & Search
+## System Flow
 
-* Filter drives
-* Search candidates
-* Sort applications
-
----
-
-## Audit & Logs (Advanced)
-
-* Track actions (admin/interviewer)
-* Maintain system history
+1. User signs up / logs in → receives JWT token
+2. Admin creates a recruitment drive
+3. Student browses active drives and applies
+4. Admin reviews applications — shortlists or rejects
+5. Admin schedules interview (assigns interviewer, date, meet link)
+6. Interviewer joins meet, evaluates candidate
+7. Admin reviews evaluations and publishes results
 
 ---
-
-# UI/UX Design Principles
-
-* Minimalist (Linear/Notion inspired)
-* No gradients or flashy elements
-* Focus on usability and clarity
-* Clean tables and structured data views
-
----
-
-# Key Design Principles Implemented
 
 ## OOP Principles
 
-* Encapsulation → Models & Services
-* Abstraction → Repository Layer
-* Inheritance → User roles (BaseUser → Admin/Student/Interviewer)
-* Polymorphism → Role-based behavior
+- **Encapsulation** → Models & Services contain internal logic
+- **Abstraction** → Repository layer abstracts all database operations
+- **Inheritance** → User roles extend base User entity
+- **Polymorphism** → Role-based behavior across controllers
 
 ---
 
-## Design Patterns
+## License
 
-* Repository Pattern
-* Service Layer Pattern
-* Dependency Injection (FastAPI)
-* Clean Architecture Separation
-
----
-
-# System Flow (End-to-End)
-
-1. User signs in via Clerk
-2. Backend verifies token
-3. User is created/retrieved from DB
-4. Admin creates recruitment drive
-5. Student applies
-6. System schedules interview
-7. Interviewer evaluates
-8. System calculates result
-9. Admin publishes result
-
----
-
-# Testing & Validation
-
-* API testing via FastAPI `/docs`
-* End-to-end flow validation
-* Database consistency checks
-
----
-
-# Conclusion
-
-This project demonstrates:
-
-* Strong backend engineering skills
-* Real-world system design
-* Clean architecture implementation
-* Modern authentication (Clerk)
-* Scalable and maintainable codebase
+This project is for educational purposes — built as a campus recruitment management system demonstrating clean architecture, OOP design patterns, and full-stack development skills.
