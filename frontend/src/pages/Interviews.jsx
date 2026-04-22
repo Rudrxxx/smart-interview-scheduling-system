@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 
-const emptyForm = { application_id: '', interviewer_id: '', scheduled_at: '', round_number: 1, meet_link: '' }
+const emptyForm = { application_id: '', interviewer_id: '', scheduled_date: '', round_number: 1, meet_link: 'https://meet.google.com/yaw-nqqi-iok' }
 
 const statusColors = {
   scheduled: { bg: 'rgba(212,168,67,0.15)', color: '#d4a843' },
@@ -30,7 +30,7 @@ export default function Interviews() {
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const openCreate = () => { setForm(emptyForm); setShowModal(true) }
   const closeModal = () => { setShowModal(false); setForm(emptyForm) }
-  const handleSubmit = async (e) => { e.preventDefault(); setSubmitting(true); try { await api.post('/api/interviews/', { application_id: parseInt(form.application_id), interviewer_id: parseInt(form.interviewer_id), scheduled_at: form.scheduled_at, round_number: parseInt(form.round_number) || 1, meet_link: form.meet_link || null }); closeModal(); fetchInterviews() } catch {} setSubmitting(false) }
+  const handleSubmit = async (e) => { e.preventDefault(); setSubmitting(true); try { await api.post('/api/interviews/', { application_id: parseInt(form.application_id), interviewer_id: parseInt(form.interviewer_id), scheduled_date: new Date(form.scheduled_date).toISOString(), round_number: parseInt(form.round_number), meet_link: form.meet_link || null }); closeModal(); fetchInterviews() } catch {} setSubmitting(false) }
   const handleDelete = async (id) => { if (!confirm('Delete?')) return; try { await api.delete(`/api/interviews/${id}`); fetchInterviews() } catch {} }
 
   const inputStyle = { background: '#161412', border: '1px solid #2a2520', color: '#f5f0e8' }
@@ -66,7 +66,7 @@ export default function Interviews() {
                       <td className="px-6 py-4" style={{ color: '#6b6459' }}>{i.drive_title || '—'}</td>
                       <td className="px-6 py-4" style={{ color: '#6b6459' }}>{i.round_number ?? '—'}</td>
                       <td className="px-6 py-4" style={{ color: '#6b6459' }}>{i.interviewer_name || `#${i.interviewer_id}`}</td>
-                      <td className="px-6 py-4 text-xs" style={{ color: '#6b6459' }}>{i.scheduled_at ? new Date(i.scheduled_at).toLocaleString() : '—'}</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: '#6b6459' }}>{i.scheduled_date ? new Date(i.scheduled_date).toLocaleString() : '—'}</td>
                       <td className="px-6 py-4">{i.meet_link ? <a href={i.meet_link} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1 rounded-lg no-underline" style={{ background: 'rgba(212,168,67,0.1)', color: '#d4a843' }}>Join ↗</a> : <span style={{ color: '#2a2520' }}>—</span>}</td>
                       <td className="px-6 py-4"><span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: sc.bg, color: sc.color }}>{i.status || 'scheduled'}</span></td>
                       <td className="px-6 py-4 text-right"><button onClick={() => handleDelete(i.id)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: 'rgba(220,50,50,0.1)', color: '#dc3232' }}>Delete</button></td>
@@ -84,13 +84,13 @@ export default function Interviews() {
                 <button onClick={closeModal} className="absolute top-4 right-4 text-lg" style={{ color: '#6b6459' }}>✕</button>
                 <h2 className="text-xl font-bold font-serif mb-6" style={{ color: '#f5f0e8' }}>Schedule Interview</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Application ID</label><input type="number" required min={1} value={form.application_id} onChange={e => set('application_id', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
+                  <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Application ID</label><input type="number" required min={1} value={form.application_id} onChange={e => set('application_id', e.target.value)} placeholder="See student's application ID from Applications page" className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
                   <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Interviewer</label><select required value={form.interviewer_id} onChange={e => set('interviewer_id', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none appearance-none" style={inputStyle}><option value="">Select...</option>{interviewers.map(iv => <option key={iv.id} value={iv.id}>{iv.name} ({iv.email})</option>)}</select></div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Date & Time</label><input type="datetime-local" required value={form.scheduled_at} onChange={e => set('scheduled_at', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
-                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Round</label><input type="number" min={1} value={form.round_number} onChange={e => set('round_number', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
+                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Date & Time</label><input type="datetime-local" required value={form.scheduled_date} onChange={e => set('scheduled_date', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={{ ...inputStyle, colorScheme: 'dark' }} /></div>
+                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Round Number</label><input type="number" required min={1} max={10} value={form.round_number} onChange={e => set('round_number', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
                   </div>
-                  <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Meet Link</label><input type="text" value={form.meet_link} onChange={e => set('meet_link', e.target.value)} placeholder="https://meet.google.com/..." className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={{ ...inputStyle, '--placeholder-color': '#6b6459' }} /></div>
+                  <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={{ color: '#6b6459' }}>Meet Link</label><input type="text" value={form.meet_link} onChange={e => set('meet_link', e.target.value)} placeholder="https://meet.google.com/..." className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /><p className="text-xs mt-1" style={{ color: '#6b6459', opacity: 0.6 }}>You can change or add your own meet link</p></div>
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button type="button" onClick={closeModal} className="px-5 py-2.5 rounded-xl text-sm font-medium" style={{ border: '1px solid #2a2520', color: '#6b6459', background: 'transparent' }}>Cancel</button>
                     <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50" style={{ background: '#d4a843', color: '#0a0a0a' }}>{submitting ? 'Scheduling...' : 'Schedule'}</button>
@@ -131,7 +131,7 @@ export default function Interviews() {
                     <p className="text-sm mb-1" style={{ color: '#6b6459' }}>{i.drive_title || '—'}</p>
                     <p className="text-xs mb-4" style={{ color: '#6b6459', opacity: 0.6 }}>Round {i.round_number ?? 1}</p>
                     <div className="text-xs mb-5 mt-auto pt-3" style={{ borderTop: '1px solid #2a2520', color: '#6b6459' }}>
-                      <p>When: {i.scheduled_at ? new Date(i.scheduled_at).toLocaleString() : 'TBD'}</p>
+                      <p>When: {i.scheduled_date ? new Date(i.scheduled_date).toLocaleString() : 'TBD'}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       {i.meet_link && <a href={i.meet_link} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-sm font-medium px-4 py-2.5 rounded-xl no-underline" style={{ border: '1px solid #2a2520', color: '#6b6459', background: 'transparent' }}>Join Meet</a>}
