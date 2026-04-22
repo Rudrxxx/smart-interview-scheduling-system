@@ -3,7 +3,7 @@ import Layout from '../components/Layout'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 
-const emptyForm = { title: '', description: '', eligibility_criteria: '', max_rounds: 1, status: 'active', application_deadline: '' }
+const emptyForm = { title: '', description: '', eligibility_criteria: '', deadline: '', is_active: 1 }
 
 export default function Drives() {
   const { user } = useAuth()
@@ -21,7 +21,7 @@ export default function Drives() {
   useEffect(() => { fetchDrives(); if (user?.role === 'student') fetchMyApps() }, [user])
 
   const openCreate = () => { setEditingDrive(null); setForm(emptyForm); setShowModal(true) }
-  const openEdit = (d) => { setEditingDrive(d); setForm({ title: d.title||'', description: d.description||'', eligibility_criteria: d.eligibility_criteria||'', max_rounds: d.max_rounds||1, status: d.status||'active', application_deadline: d.application_deadline ? d.application_deadline.split('T')[0] : '' }); setShowModal(true) }
+  const openEdit = (d) => { setEditingDrive(d); setForm({ title: d.title||'', description: d.description||'', eligibility_criteria: d.eligibility_criteria||'', deadline: d.deadline ? d.deadline.split('T')[0] : '', is_active: d.is_active ?? 1 }); setShowModal(true) }
   const closeModal = () => { setShowModal(false); setEditingDrive(null); setForm(emptyForm) }
   const handleSubmit = async (e) => { e.preventDefault(); try { if (editingDrive) await api.put(`/api/drives/${editingDrive.id}`, form); else await api.post('/api/drives/', form); closeModal(); fetchDrives() } catch {} }
   const handleDelete = async (id) => { if (!confirm('Delete this drive?')) return; try { await api.delete(`/api/drives/${id}`); fetchDrives() } catch {} }
@@ -33,7 +33,7 @@ export default function Drives() {
 
   if (loading) return <Layout><div className="flex items-center justify-center h-64 text-sm" style={{ color: '#6b6459' }}>Loading drives...</div></Layout>
 
-  const active = drives.filter(d => d.status === 'active')
+  const active = drives.filter(d => d.is_active === 1)
 
   if (user?.role === 'admin') {
     return (
@@ -56,7 +56,6 @@ export default function Drives() {
                 <th className="px-6 py-4 text-xs uppercase tracking-wider font-medium" style={{ color: '#6b6459' }}>Title</th>
                 <th className="px-6 py-4 text-xs uppercase tracking-wider font-medium" style={{ color: '#6b6459' }}>Status</th>
                 <th className="px-6 py-4 text-xs uppercase tracking-wider font-medium" style={{ color: '#6b6459' }}>Deadline</th>
-                <th className="px-6 py-4 text-xs uppercase tracking-wider font-medium" style={{ color: '#6b6459' }}>Rounds</th>
                 <th className="px-6 py-4 text-xs uppercase tracking-wider font-medium text-right" style={{ color: '#6b6459' }}>Actions</th>
               </tr></thead>
               <tbody>
@@ -64,9 +63,8 @@ export default function Drives() {
                   <tr key={d.id} className="transition-colors" style={{ borderBottom: '1px solid #2a2520' }}
                     onMouseEnter={e => e.currentTarget.style.background='#161412'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                     <td className="px-6 py-4 font-medium" style={{ color: '#f5f0e8' }}>{d.title}</td>
-                    <td className="px-6 py-4"><span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: d.status === 'active' ? 'rgba(212,168,67,0.15)' : 'rgba(107,100,89,0.2)', color: d.status === 'active' ? '#d4a843' : '#6b6459' }}>{d.status}</span></td>
-                    <td className="px-6 py-4" style={{ color: '#6b6459' }}>{d.application_deadline ? new Date(d.application_deadline).toLocaleDateString() : '—'}</td>
-                    <td className="px-6 py-4" style={{ color: '#6b6459' }}>{d.max_rounds ?? '—'}</td>
+                    <td className="px-6 py-4"><span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: d.is_active === 1 ? 'rgba(212,168,67,0.15)' : 'rgba(107,100,89,0.2)', color: d.is_active === 1 ? '#d4a843' : '#6b6459' }}>{d.is_active === 1 ? 'Active' : 'Inactive'}</span></td>
+                    <td className="px-6 py-4" style={{ color: '#6b6459' }}>{d.deadline ? new Date(d.deadline).toLocaleDateString() : '—'}</td>
                     <td className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-2">
                       <button onClick={() => openEdit(d)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: '#161412', border: '1px solid #2a2520', color: '#6b6459' }}>Edit</button>
                       <button onClick={() => handleDelete(d.id)} className="text-xs px-3 py-1.5 rounded-lg" style={{ background: 'rgba(220,50,50,0.1)', color: '#dc3232' }}>Delete</button>
@@ -88,10 +86,9 @@ export default function Drives() {
                   <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Description</label><textarea rows={3} value={form.description} onChange={e => set('description', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} /></div>
                   <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Eligibility</label><textarea rows={2} value={form.eligibility_criteria} onChange={e => set('eligibility_criteria', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} /></div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Rounds</label><input type="number" min={1} value={form.max_rounds} onChange={e => set('max_rounds', parseInt(e.target.value)||1)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
-                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Status</label><select value={form.status} onChange={e => set('status', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none appearance-none" style={inputStyle}><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div>
+                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Deadline</label><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
+                    <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Status</label><select value={form.is_active} onChange={e => set('is_active', parseInt(e.target.value))} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none appearance-none" style={inputStyle}><option value={1}>Active</option><option value={0}>Inactive</option></select></div>
                   </div>
-                  <div><label className="block text-xs uppercase tracking-widest mb-1.5 font-medium" style={labelStyle}>Deadline</label><input type="date" value={form.application_deadline} onChange={e => set('application_deadline', e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} /></div>
                   <div className="flex items-center justify-end gap-3 pt-4">
                     <button type="button" onClick={closeModal} className="px-5 py-2.5 rounded-xl text-sm font-medium" style={{ border: '1px solid #2a2520', color: '#6b6459', background: 'transparent' }}>Cancel</button>
                     <button type="submit" className="px-5 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#d4a843', color: '#0a0a0a' }}>{editingDrive ? 'Save' : 'Create'}</button>
@@ -129,7 +126,7 @@ export default function Drives() {
                   <p className="text-sm mb-4 line-clamp-2 leading-relaxed flex-1" style={{ color: '#6b6459' }}>{d.description || 'No description.'}</p>
                   <div className="space-y-2 text-xs mb-5" style={{ color: '#6b6459' }}>
                     {d.eligibility_criteria && <p>◈ {d.eligibility_criteria}</p>}
-                    {d.application_deadline && <p>⊙ Deadline: {new Date(d.application_deadline).toLocaleDateString()}</p>}
+                    {d.deadline && <p>⊙ Deadline: {new Date(d.deadline).toLocaleDateString()}</p>}
                   </div>
                   {appliedIds.has(d.id) ? (
                     <button disabled className="w-full text-sm font-medium px-4 py-2.5 rounded-xl cursor-default" style={{ background: 'rgba(212,168,67,0.1)', color: '#d4a843', border: '1px solid rgba(212,168,67,0.2)' }}>Applied ✓</button>
