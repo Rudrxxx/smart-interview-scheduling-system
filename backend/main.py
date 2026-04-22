@@ -45,6 +45,20 @@ app.include_router(evaluation_router)
 app.include_router(result_router)
 
 
+@app.on_event("startup")
+def startup_event():
+    import os
+    if os.getenv("AUTO_SEED") == "True":
+        print("Auto-seeding database...")
+        try:
+            from seed import seed_users, seed_drives
+            seed_users()
+            seed_drives()
+            print("Auto-seed complete.")
+        except Exception as e:
+            print(f"Auto-seed failed: {e}")
+
+
 @app.get("/")
 def root():
     return {"message": "Smart Interview Scheduling System API is running!"}
