@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import api from '../api/axios'
 
-const filters = ['all', 'pending', 'shortlisted', 'accepted', 'rejected']
+const filters = ['all', 'applied', 'scheduled', 'selected', 'rejected']
 
 function getInitials(n) { if (!n) return '?'; return n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) }
 
 const statusColors = {
-  pending: { bg: 'rgba(212,168,67,0.15)', color: '#d4a843' },
-  shortlisted: { bg: 'rgba(212,168,67,0.3)', color: '#d4a843' },
-  accepted: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  applied: { bg: 'rgba(212,168,67,0.15)', color: '#d4a843' },
+  scheduled: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  interviewed: { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
+  selected: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
   rejected: { bg: 'rgba(220,50,50,0.15)', color: '#dc3232' },
 }
 
@@ -55,7 +56,7 @@ export default function Applications() {
               <tbody>
                 {filtered.map(a => {
                   const nm = a.student_name || `Student #${a.student_id}`
-                  const sc = statusColors[a.status] || statusColors.pending
+                  const sc = statusColors[a.status] || statusColors.applied
                   return (
                     <tr key={a.id} className="transition-colors" style={{ borderBottom: '1px solid #2a2520' }}
                       onMouseEnter={e => e.currentTarget.style.background='#161412'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
@@ -65,11 +66,11 @@ export default function Applications() {
                       </div></td>
                       <td className="px-6 py-4" style={{ color: '#6b6459' }}>{a.drive_title || `Drive #${a.drive_id}`}</td>
                       <td className="px-6 py-4"><span className="text-xs font-medium capitalize rounded-full px-3 py-1" style={{ background: sc.bg, color: sc.color }}>{a.status}</span></td>
-                      <td className="px-6 py-4 text-xs" style={{ color: '#6b6459' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : '—'}</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: '#6b6459' }}>{a.applied_at ? new Date(a.applied_at).toLocaleDateString() : '—'}</td>
                       <td className="px-6 py-4 text-right">
-                        {(a.status === 'pending' || a.status === 'shortlisted') && (
+                        {(a.status === 'applied' || a.status === 'scheduled') && (
                           <div className="flex items-center justify-end gap-2">
-                            {a.status === 'pending' && <button onClick={() => updateStatus(a.id, 'shortlisted')} disabled={updatingId === a.id} className="text-xs px-3 py-1.5 rounded-lg disabled:opacity-50" style={{ border: '1px solid rgba(212,168,67,0.4)', color: '#d4a843', background: 'transparent' }}>Shortlist</button>}
+                            {a.status === 'applied' && <button onClick={() => updateStatus(a.id, 'scheduled')} disabled={updatingId === a.id} className="text-xs px-3 py-1.5 rounded-lg disabled:opacity-50" style={{ border: '1px solid rgba(212,168,67,0.4)', color: '#d4a843', background: 'transparent' }}>Shortlist</button>}
                             <button onClick={() => updateStatus(a.id, 'rejected')} disabled={updatingId === a.id} className="text-xs px-3 py-1.5 rounded-lg disabled:opacity-50" style={{ border: '1px solid rgba(220,50,50,0.3)', color: '#dc3232', background: 'transparent' }}>Reject</button>
                           </div>
                         )}
