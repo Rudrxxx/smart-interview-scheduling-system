@@ -72,6 +72,29 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link to="/register" className="underline font-medium" style={{ color: '#0a0a0a' }}>Create one</Link>
           </p>
+
+          {/* Demo Accounts */}
+          <div className="mt-10">
+            <p className="text-xs uppercase tracking-widest font-medium mb-3" style={{ color: '#6b6459' }}>Try a demo account</p>
+            <div className="flex gap-2">
+              {[
+                { label: 'Admin', email: 'admin@demo.com', color: '#d4a843' },
+                { label: 'Student', email: 'student@demo.com', color: '#22c55e' },
+                { label: 'Interviewer', email: 'interviewer@demo.com', color: '#3b82f6' },
+              ].map((d) => (
+                <button key={d.label} type="button" onClick={() => { setEmail(d.email); setPassword('demo123') }}
+                  className="rounded-xl px-3 py-2.5 cursor-pointer transition-all text-left w-full"
+                  style={{ border: `1px solid ${d.color}33`, background: 'transparent' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = `${d.color}66`}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = `${d.color}33`}
+                >
+                  <p className="text-sm font-semibold leading-tight" style={{ color: d.color }}>{d.label}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#6b6459' }}>{d.email}</p>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs mt-2" style={{ color: '#999' }}>Password: demo123</p>
+          </div>
         </div>
       </div>
     </div>
