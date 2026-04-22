@@ -7,7 +7,7 @@ class InterviewCreate(BaseModel):
     application_id: int
     interviewer_id: int
     scheduled_date: datetime
-    time_slot: str
+    round_number: int
     meet_link: Optional[str] = None
 
 
@@ -16,7 +16,7 @@ class InterviewResponse(BaseModel):
     application_id: int
     interviewer_id: int
     scheduled_date: datetime
-    time_slot: str
+    round_number: int
     meet_link: Optional[str]
 
     class Config:

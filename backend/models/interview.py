@@ -10,7 +10,7 @@ class Interview(Base):
     application_id = Column(Integer, ForeignKey("applications.id"), unique=True, nullable=False)
     interviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     scheduled_date = Column(DateTime, nullable=False)
-    time_slot = Column(String, nullable=False)
+    round_number = Column(Integer, nullable=False, default=1)
     meet_link = Column(String, nullable=True)
 
     # Relationships

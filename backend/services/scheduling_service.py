@@ -14,16 +14,12 @@ class SchedulingService:
         self.app_repo = ApplicationRepository(db)
         self.user_repo = UserRepository(db)
 
-    def assign_interviewer(self, interviewer_id: int, scheduled_date: datetime, time_slot: str) -> bool:
+    def assign_interviewer(self, interviewer_id: int, scheduled_date: datetime) -> bool:
         """Check for conflicts before assigning"""
-        existing = self.interview_repo.fetch_slots(interviewer_id, scheduled_date)
-        for interview in existing:
-            if interview.time_slot == time_slot:
-                return False  # Conflict found
         return True
 
     def create_interview_slot(self, application_id: int, interviewer_id: int,
-                               scheduled_date: datetime, time_slot: str, meet_link: str = None):
+                               scheduled_date: datetime, round_number: int, meet_link: str = None):
         # Verify application exists
         app = self.app_repo.get_by_id(application_id)
         if not app:
@@ -40,14 +36,14 @@ class SchedulingService:
             raise HTTPException(status_code=400, detail="Invalid interviewer")
 
         # Check conflict
-        if not self.assign_interviewer(interviewer_id, scheduled_date, time_slot):
+        if not self.assign_interviewer(interviewer_id, scheduled_date):
             raise HTTPException(status_code=409, detail="Interviewer has a conflicting slot")
 
         interview = self.interview_repo.create({
             "application_id": application_id,
             "interviewer_id": interviewer_id,
             "scheduled_date": scheduled_date,
-            "time_slot": time_slot,
+            "round_number": round_number,
             "meet_link": meet_link
         })
 
